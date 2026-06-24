@@ -11,7 +11,6 @@
     background: #e9edf2;
     margin: 0;
     padding: 16px;
-    zoom: 0.8;
   }
   .wrap {
     width: 100%;
@@ -157,7 +156,7 @@
 
   .scrollx { overflow-x: auto; }
 
-  .tabla-compacta table { font-size: 10.5px; }
+  .tabla-compacta table { font-size: 10.5px; min-width: 1180px; }
   .tabla-compacta th { padding: 8px 5px; font-size: 10px; line-height: 1.25; white-space: normal; word-break: break-word; }
   .tabla-compacta td { padding: 7px 4px; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: visible; }
   .tabla-compacta th:first-child, .tabla-compacta td:first-child { width: 8%; }
@@ -1159,6 +1158,7 @@ function switchVista(destino) {
 
   if (destino === 'categorias') renderCategorias('categoriasContainer');
   if (destino === 'horas') renderHoras();
+  if (typeof autoFit === 'function') autoFit();
 }
 btnVistaCat.addEventListener('click', function() {
   switchVista(vistaActual === 'categorias' ? 'ventas' : 'categorias');
@@ -1695,9 +1695,34 @@ document.getElementById('hvBack').addEventListener('click', function(){
   renderHoras(true);
 });
 
+// ============ Auto-ajuste al tamaño de pantalla ============
+function autoFit() {
+  var b = document.body;
+  b.style.zoom = '1';                       // reset para medir
+  var natural = b.scrollWidth;
+  document.querySelectorAll('table').forEach(function (t) {
+    if (t.offsetParent === null) return;
+    if (t.scrollWidth > natural) natural = t.scrollWidth;
+  });
+  // ancho de diseño cómodo: garantiza columnas legibles aunque la tabla se comprima
+  var DESIGN = (vistaActual === 'horas') ? 1180 : 1300;
+  if (natural < DESIGN) natural = DESIGN;
+  natural += 34;                            // padding del body/wrap
+  var avail = document.documentElement.clientWidth;
+  var z = avail / natural;
+  if (z > 1) z = 1;                         // no agrandar más del 100%
+  if (z < 0.45) z = 0.45;                   // piso de legibilidad
+  b.style.zoom = z;
+}
+var _fitTO;
+window.addEventListener('resize', function () { clearTimeout(_fitTO); _fitTO = setTimeout(autoFit, 120); });
+window.addEventListener('load', autoFit);
+
 // ============ Initial render ============
 applyData();
 cargarEnVivo();
+autoFit();
+setTimeout(autoFit, 60);
 </script>
 
 </body>

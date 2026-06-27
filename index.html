@@ -662,6 +662,11 @@ function pillClassGrowth(pct) {
 // ============ STATE per table ============
 const globalState = { level: 'region', region: null, zona: null };
 
+// Orden fijo de regiones en todas las tablas de la vista principal: NORTE, SUR, CENTRO
+const ORDEN_REGION = ['VERACRUZ NORTE', 'VERACRUZ SUR', 'VERACRUZ CENTRO'];
+function idxRegion(k) { const i = ORDEN_REGION.indexOf(k); return i < 0 ? 99 : i; }
+
+
 // ============ RENDER: standard 9-col table (Tiendas/Ppto/Venta/Proy/Dif/%ALC/%ALCProy/PromV/PromP) ============
 function renderStandardTable(dataKey, containerId, extraVs25) {
   const st = globalState;
@@ -674,7 +679,7 @@ function renderStandardTable(dataKey, containerId, extraVs25) {
   if (st.level === 'region') {
     const regions = Object.keys(d.region);
     rows = regions.map(r => ({ key: r, label: cleanRegionName(r), data: d.region[r], clickable: true, sup: getSup(dataKey, r) }));
-    rows.sort((a,b) => b.data.pctProy - a.data.pctProy);
+    rows.sort((a,b) => idxRegion(a.key) - idxRegion(b.key));
     rows.push({ key: 'TOTAL', label: 'TOTAL GENERAL', data: sumRows(regions.map(r=>d.region[r])), clickable: false, isTotal: true, sup: getSup(dataKey, null, true) });
   } else if (st.level === 'zona') {
     const zonas = Object.keys(d.zona[st.region] || {});
@@ -756,7 +761,7 @@ function renderEspecialTable(containerId) {
   if (st.level === 'region') {
     const regions = Object.keys(d.region);
     rows = regions.map(r => ({ key: r, label: cleanRegionName(r), data: d.region[r], clickable: true, sup: getSup('ventaEspecial', r) }));
-    rows.sort((a,b) => b.data.pctProy - a.data.pctProy);
+    rows.sort((a,b) => idxRegion(a.key) - idxRegion(b.key));
     rows.push({ key: 'TOTAL', label: 'TOTAL GENERAL', data: sumRowsEspecial(regions.map(r=>d.region[r])), clickable: false, isTotal: true, sup: getSup('ventaEspecial', null, true) });
   } else if (st.level === 'zona') {
     const zonas = Object.keys(d.zona[st.region] || {});
@@ -872,7 +877,7 @@ function renderResumenDetalle() {
   if (st.level === 'region') {
     rows = regions.map(r => ({ key: r, label: cleanRegionName(r),
       total: dT.region[r], normal: DATA.resumenNormal.region[r], especial: dE.region[r], clickable: true, sup: getSup('resumen', r) }));
-    rows.sort((a,b) => b.total.pctProy - a.total.pctProy);
+    rows.sort((a,b) => idxRegion(a.key) - idxRegion(b.key));
     rows.push({ key:'TOTAL', label:'TOTAL GENERAL', total: sumRows(regions.map(r=>dT.region[r])), normal: sumRows(regions.map(r=>DATA.resumenNormal.region[r])), especial: sumRows(regions.map(r=>dE.region[r])), isTotal:true, sup: getSup('resumen', null, true) });
   } else if (st.level === 'zona') {
     const zonas = Object.keys(dT.zona[st.region] || {});

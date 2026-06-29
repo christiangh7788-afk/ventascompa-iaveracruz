@@ -857,15 +857,14 @@ function getSup(dataKey, region, isTotal) {
   return m[region] || '';
 }
 function sumRows(rowsData) {
-  const t = { tiendas:0, ppto:0, venta:0, proy:0, dif:0, venta25:0 };
-  rowsData.forEach(r => { t.tiendas+=r.tiendas; t.ppto+=r.ppto; t.venta+=r.venta; t.proy+=r.proy; t.venta25+=(r.venta25||0); });
+  const t = { tiendas:0, ppto:0, venta:0, proy:0, dif:0, venta25:0, dif25:0 };
+  rowsData.forEach(r => { t.tiendas+=r.tiendas; t.ppto+=r.ppto; t.venta+=r.venta; t.proy+=r.proy; t.venta25+=(r.venta25||0); t.dif25+=(r.dif25||0); });
   t.dif = t.proy - t.ppto;
   t.pct = t.ppto ? (t.venta/t.ppto*100) : 0;
   t.pctProy = t.ppto ? (t.proy/t.ppto*100) : 0;
   t.promV = t.tiendas ? t.venta/t.tiendas : 0;
   t.promP = t.tiendas ? t.ppto/t.tiendas : 0;
-  t.dif25 = t.proy - t.venta25;
-  t.dif25pct = t.venta25 ? ((t.proy/t.venta25-1)*100) : 0;
+  t.dif25pct = t.venta25 ? (t.dif25/t.venta25*100) : 0;
   t.pct = Math.round(t.pct*10)/10; t.pctProy = Math.round(t.pctProy*10)/10; t.dif25pct = Math.round(t.dif25pct*10)/10;
   return t;
 }

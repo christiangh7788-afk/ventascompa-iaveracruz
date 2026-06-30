@@ -1182,6 +1182,7 @@ function equalizePillWidths(container) {
 }
 
 function renderAll() {
+  renderKpisAndInsights();
   renderResumenSimple();
   if (detalleActivo) renderResumenDetalle();
   renderStandardTable('ventaTotal', 'ventaTotalContainer', true);
@@ -1354,16 +1355,26 @@ function updateBreadcrumbBar() {
 // ============ KPIs e Insights de la vista Ventas (clon del diseño de referencia) ============
 function fmtMillones(n){ return '$' + (n/1e6).toFixed(1) + 'M'; }
 function renderKpisAndInsights(){
-  const r = DATA.resumen.region;
-  const regs = Object.keys(r);
-  let ppto=0, venta=0, proy=0, tiendas=0;
-  regs.forEach(k=>{ ppto+=r[k].ppto; venta+=r[k].venta; proy+=r[k].proy; tiendas+=r[k].tiendas; });
+  const st = globalState;
+  // --- Totales del ámbito actual (compañía / región / zona) ---
+  let ppto=0, venta=0, proy=0, tiendas=0, scopeLabel='Todas las regiones';
+  if (st.level === 'region') {
+    const r = DATA.resumen.region;
+    Object.keys(r).forEach(k=>{ ppto+=r[k].ppto; venta+=r[k].venta; proy+=r[k].proy; tiendas+=r[k].tiendas; });
+  } else if (st.level === 'zona') {
+    const z = DATA.resumen.region[st.region];
+    ppto=z.ppto; venta=z.venta; proy=z.proy; tiendas=z.tiendas;
+    scopeLabel = cleanRegionName(st.region);
+  } else { // tienda (zona seleccionada)
+    const z = DATA.resumen.zona[st.region][st.zona];
+    ppto=z.ppto; venta=z.venta; proy=z.proy; tiendas=z.tiendas;
+    scopeLabel = cleanRegionName(st.region) + ' › ' + st.zona;
+  }
   const dif = proy - ppto;
   const pct = ppto ? venta/ppto*100 : 0;
   const pctProy = ppto ? proy/ppto*100 : 0;
   const pct1 = Math.round(pct*10)/10, pctProy1 = Math.round(pctProy*10)/10;
 
-  const cart = '<svg width="22" height="22" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="13" rx="2" fill="#2563b8"/><rect x="7" y="8" width="10" height="2" rx="1" fill="#fff"/></svg>';
   function card(ic, icCls, label, value, valCls, bar){
     return '<div class="kpi-card"><div class="kpi-top"><div class="kpi-ic '+icCls+'">'+ic+'</div>'
       + '<div><div class="kpi-label">'+label+'</div><div class="kpi-value '+(valCls||'')+'">'+value+'</div></div></div>'
@@ -1373,8 +1384,9 @@ function renderKpisAndInsights(){
   const barOra = '<div class="kpi-bar"><span style="width:'+Math.min(pctProy1,100)+'%;background:#F47920;"></span></div>';
   const difTxt = (dif<0?'(':'') + fmt(Math.abs(dif)) + (dif<0?')':'');
 
+  const tiendasLbl = (st.level === 'tienda') ? 'Tiendas en zona' : 'Tiendas activas';
   let html = '';
-  html += card('🏪','blue','Tiendas activas', tiendas, '');
+  html += card('🏪','blue', tiendasLbl, tiendas, '');
   html += card('🎯','blue','Presupuesto total', fmt(ppto), '');
   html += card('💲','blue','Venta acumulada', fmt(venta), '');
   html += card('📈','green','Proyección', fmt(proy), 'green');
@@ -1383,18 +1395,33 @@ function renderKpisAndInsights(){
   html += card('⚖️','red','Diferencia', difTxt, 'red');
   document.getElementById('kpiRow').innerHTML = html;
 
-  // Insights: región líder en venta acumulada (Resumen) y región líder en % alcance (Venta especial)
-  let topV = regs[0];
-  regs.forEach(k=>{ if(r[k].venta > r[topV].venta) topV = k; });
-  const share = venta ? (r[topV].venta/venta*100) : 0;
-  const e = DATA.ventaEspecial.region; const eregs = Object.keys(e);
-  let topE = eregs[0];
-  eregs.forEach(k=>{ if(e[k].pct > e[topE].pct) topE = k; });
-
+  // --- Insights del ámbito actual: hijo líder en venta + líder en % alcance especial ---
+  let childMap, espMap, lblFn, kind;
+  if (st.level === 'region') {
+    childMap = DATA.resumen.region; espMap = DATA.ventaEspecial.region; lblFn = cleanRegionName; kind = 'región';
+  } else if (st.level === 'zona') {
+    childMap = DATA.resumen.zona[st.region]; espMap = (DATA.ventaEspecial.zona||{})[st.region]; lblFn = (z=>z); kind = 'zona';
+  } else {
+    const arr = DATA.resumen.tienda[st.region][st.zona]; childMap = {}; const em = {};
+    const ea = ((DATA.ventaEspecial.tienda||{})[st.region]||{})[st.zona] || [];
+    arr.forEach(t=>{ childMap[t.nombre]={venta:t.venta}; });
+    ea.forEach(t=>{ em[t.nombre]={pct:t.pct}; }); espMap = em; lblFn = (x=>x); kind = 'tienda';
+  }
+  const keys = Object.keys(childMap).filter(k=>k!=='PENDIENTE');
+  let topV = keys[0];
+  keys.forEach(k=>{ if(childMap[k].venta > (childMap[topV]?childMap[topV].venta:-1)) topV = k; });
+  const share = venta ? (childMap[topV].venta/venta*100) : 0;
+  let espTxt = '';
+  if (espMap && Object.keys(espMap).length){
+    const ek = Object.keys(espMap).filter(k=>k!=='PENDIENTE');
+    let topE = ek[0];
+    ek.forEach(k=>{ if(espMap[k].pct > (espMap[topE]?espMap[topE].pct:-1)) topE = k; });
+    if (topE) espTxt = ' <b>'+lblFn(topE)+'</b> lidera el % alcance en Venta especial con '+(Math.round(espMap[topE].pct*10)/10)+'%.';
+  }
   document.getElementById('insightsBar').innerHTML =
-    '<div class="insights-ic">i</div><div><b>Insights clave:</b> '
-    + '<b>'+cleanRegionName(topV)+'</b> registra la mayor venta acumulada en el Resumen de venta con '+fmtMillones(r[topV].venta)+' ('+share.toFixed(1)+'% del total). '
-    + '<b>'+cleanRegionName(topE)+'</b> lidera el % alcance en Venta especial con '+(Math.round(e[topE].pct*10)/10)+'%.</div>';
+    '<div class="insights-ic">i</div><div><b>Insights clave ('+scopeLabel+'):</b> '
+    + '<b>'+lblFn(topV)+'</b> registra la mayor venta acumulada con '+fmtMillones(childMap[topV].venta)+' ('+share.toFixed(1)+'% del '+(kind==='región'?'total':kind)+'). '
+    + espTxt + '</div>';
 }
 
 // ====== NÚCLEO DE RECÁLCULO (mismo que se validó contra el dashboard) ======

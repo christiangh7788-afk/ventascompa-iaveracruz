@@ -699,7 +699,7 @@ function renderStandardTable(dataKey, containerId, extraVs25) {
     rows.push({ key: 'TOTAL', label: 'TOTAL ' + cleanRegionName(st.region), data: d.region[st.region], clickable: false, isTotal: true });
   } else if (st.level === 'tienda') {
     const tiendas = (d.tienda[st.region] && d.tienda[st.region][st.zona]) || [];
-    rows = tiendas.map(t => ({ key: t.eco, label: t.nombre, data: { tiendas: 1, ppto: t.ppto, venta: t.venta, proy: t.proy, dif: t.proy - t.ppto, pct: t.pct, pctProy: t.pctProy, promV: t.venta, promP: t.ppto }, clickable: false }));
+    rows = tiendas.map(t => ({ key: t.eco, label: t.nombre, data: { tiendas: 1, ppto: t.ppto, venta: t.venta, proy: t.proy, dif: t.proy - t.ppto, pct: t.pct, pctProy: t.pctProy, promV: t.venta, promP: t.ppto, venta25: t.venta25||0, dif25: t.dif25||0, dif25pct: t.dif25pct||0 }, clickable: false }));
     rows.sort((a,b) => b.data.pctProy - a.data.pctProy);
     const zonaTotal = d.zona[st.region][st.zona];
     rows.push({ key: 'TOTAL', label: 'TOTAL ' + st.zona, data: zonaTotal, clickable: false, isTotal: true });
@@ -742,8 +742,8 @@ function renderStandardTable(dataKey, containerId, extraVs25) {
       html += '<td>' + fmt(row.data.promP) + '</td>';
     }
     if (extraVs25) {
-      html += '<td class="col-vs25 pos">' + fmtSigned(row.data.dif25||0) + '</td>';
-      html += '<td class="col-vs25"><span class="pill pill-green">' + (row.data.dif25pct>=0?'+':'') + (row.data.dif25pct||0) + '%</span></td>';
+      html += '<td class="col-vs25 ' + ((row.data.dif25||0) >= 0 ? 'pos' : 'neg') + '">' + fmtSigned(row.data.dif25||0) + '</td>';
+      html += '<td class="col-vs25"><span class="pill ' + ((row.data.dif25pct||0) >= 0 ? 'pill-green' : 'pill-red') + '">' + (row.data.dif25pct>=0?'+':'') + (row.data.dif25pct||0) + '%</span></td>';
     }
     html += '</tr>';
   });

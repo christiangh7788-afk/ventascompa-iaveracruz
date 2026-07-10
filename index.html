@@ -2380,6 +2380,16 @@ function autoFit() {
 }
 var _fitTO;
 window.addEventListener('resize', function () { clearTimeout(_fitTO); _fitTO = setTimeout(autoFit, 120); });
+
+// ============ Auto-ajuste robusto: recalcula el zoom ante CUALQUIER cambio de contenido ============
+// Cubre: mostrar/ocultar tablas (checkboxes), "Ver vs 2025" (columnas extra), drill de
+// región/zona/tienda, cambio de mes o vista, y cualquier otro caso no contemplado a mano.
+var _fitObsTO;
+var fitObserver = new MutationObserver(function () {
+  clearTimeout(_fitObsTO);
+  _fitObsTO = setTimeout(autoFit, 150);
+});
+fitObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 window.addEventListener('load', autoFit);
 
 // ============ Selector de mes ============

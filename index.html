@@ -533,7 +533,7 @@
       <div class="section-title"><span class="sec-ic sec-navy">📊</span>Resumen de venta</div>
       <button class="btn-toggle" id="toggleDet">Ver Detalle</button>
     </div>
-    <div class="section-note">Tiendas activas: 243 · proyección a 30 días · clic en una región para ver sus zonas, clic en una zona para ver sus tiendas</div>
+    <div class="section-note" id="notaResumen">Tiendas activas: 243 · proyección a 30 días · clic en una región para ver sus zonas, clic en una zona para ver sus tiendas</div>
     <div id="resumenSimpleContainer" class="scrollx"></div>
     <div id="resumenDetalleContainer" class="tabla-compacta" style="display:none;"></div>
   </div>
@@ -544,7 +544,7 @@
       <div class="section-title"><span class="sec-ic sec-navy">🏢</span>Venta Total Compañía <span id="ventaTotalMesLabel" style="color:#9aa1ab; font-weight:400; text-transform:none; letter-spacing:0;">· Junio 2026</span></div>
       <button class="btn-toggle" id="toggle1">Ver vs 2025</button>
     </div>
-    <div class="section-note">Tiendas activas: 243 · proyección a 30 días · clic en región/zona para ver detalle</div>
+    <div class="section-note" id="notaVentaTotal">Tiendas activas: 243 · proyección a 30 días · clic en región/zona para ver detalle</div>
     <div id="ventaTotalContainer" class="scrollx"></div>
   </div>
 
@@ -567,7 +567,7 @@
         <button class="btn-toggle" id="toggle2">Ver vs 2025</button>
       </div>
     </div>
-    <div class="section-note">Tiendas activas: 202 · clic en región/zona para ver detalle</div>
+    <div class="section-note" id="notaMT">Tiendas activas: 202 · clic en región/zona para ver detalle</div>
     <div id="mtContainer" class="scrollx"></div>
     <div id="mtDetalleContainer" class="tabla-compacta" style="display:none;"></div>
   </div>
@@ -2220,6 +2220,19 @@ function applyData() {
     DATA.nombreMes + ' · Última actualización: ' + DATA.fechaActualizacion + ' · Día ' + DATA.diaCorte + ' de ' + DATA.diasDelMes + ' · ' + (DATA.soloPresupuesto ? 'sólo presupuesto' : 'datos reales');
   document.getElementById('ventaTotalMesLabel').textContent = '· ' + DATA.nombreMes;
   document.getElementById('ventaTotalNormalMesLabel').textContent = '· ' + DATA.nombreMes;
+
+  var totalTiendas = 0;
+  Object.keys(DATA.ventaTotal.region || {}).forEach(function (r) { totalTiendas += DATA.ventaTotal.region[r].tiendas; });
+  var mtTiendas = 0;
+  Object.keys(DATA.mismasTiendas.region || {}).forEach(function (r) { mtTiendas += DATA.mismasTiendas.region[r].tiendas; });
+  var dm = DATA.diasDelMes;
+  var notaResumen = document.getElementById('notaResumen');
+  if (notaResumen) notaResumen.textContent = 'Tiendas activas: ' + totalTiendas + ' · proyección a ' + dm + ' días · clic en una región para ver sus zonas, clic en una zona para ver sus tiendas';
+  var notaVentaTotal = document.getElementById('notaVentaTotal');
+  if (notaVentaTotal) notaVentaTotal.textContent = 'Tiendas activas: ' + totalTiendas + ' · proyección a ' + dm + ' días · clic en región/zona para ver detalle';
+  var notaMT = document.getElementById('notaMT');
+  if (notaMT) notaMT.textContent = 'Tiendas activas: ' + mtTiendas + ' · clic en región/zona para ver detalle';
+
   renderKpisAndInsights();
   renderAll();
 }
